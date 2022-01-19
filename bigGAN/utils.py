@@ -242,57 +242,6 @@ class BigGANConfig(object):
         return json.dumps(self.to_dict(), indent=2, sort_keys=True) + "\n"
 
 
-def snconv2d(eps=1e-12, **kwargs):
-    return nn.utils.spectral_norm(nn.Conv2d(**kwargs), eps=eps)
-
-def snlinear(eps=1e-12, **kwargs):
-    return nn.utils.spectral_norm(nn.Linear(**kwargs), eps=eps)
-
-def sn_embedding(eps=1e-12, **kwargs):
-    return nn.utils.spectral_norm(nn.Embedding(**kwargs), eps=eps)
-
-
-class SelfAttn(nn.Module):
-    """ Self attention Layer"""
-    def __init__(self, in_channels, eps=1e-12):
-        super(SelfAttn, self).__init__()
-        self.in_channels = in_channels
-        self.snconv1x1_theta = snconv2d(in_channels=in_channels, out_channels=in_channels//8,
-                                        kernel_size=1, bias=False, eps=eps)
-        self.snconv1x1_phi = snconv2d(in_channels=in_channels, out_channels=in_channels//8,
-                                      kernel_size=1, bias=False, eps=eps)
-        self.snconv1x1_g = snconv2d(in_channels=in_channels, out_channels=in_channels//2,
-                                    kernel_size=1, bias=False, eps=eps)
-        self.snconv1x1_o_conv = snconv2d(in_channels=in_channels//2, out_channels=in_channels,
-                                         kernel_size=1, bias=False, eps=eps)
-        self.maxpool = nn.MaxPool2d(2, stride=2, padding=0)
-        self.softmax  = nn.Softmax(dim=-1)
-        self.gamma = nn.Parameter(torch.zeros(1))
-
-    def forward(self, x):
-        _, ch, h, w = x.size()
-        # Theta path
-        theta = self.snconv1x1_theta(x)
-        theta = theta.view(-1, ch//8, h*w)
-        # Phi path
-        phi = self.snconv1x1_phi(x)
-        phi = self.maxpool(phi)
-        phi = phi.view(-1, ch//8, h*w//4)
-        # Attn map
-        attn = torch.bmm(theta.permute(0, 2, 1), phi)
-        attn = self.softmax(attn)
-        # g path
-        g = self.snconv1x1_g(x)
-        g = self.maxpool(g)
-        g = g.view(-1, ch//2, h*w//4)
-        # Attn_g - o_conv
-        attn_g = torch.bmm(g, attn.permute(0, 2, 1))
-        attn_g = attn_g.view(-1, ch//2, h, w)
-        attn_g = self.snconv1x1_o_conv(attn_g)
-        # Out
-        out = x + self.gamma*attn_g
-        return 
-
 
 
 class BigGANBatchNorm(nn.Module):
@@ -315,8 +264,8 @@ class BigGANBatchNorm(nn.Module):
 
         if conditional:
             assert condition_vector_dim is not None
-            self.scale = snlinear(in_features=condition_vector_dim, out_features=num_features, bias=False, eps=eps)
-            self.offset = snlinear(in_features=condition_vector_dim, out_features=num_features, bias=False, eps=eps)
+            self.scale = specNorm_linear(in_features=condition_vector_dim, out_features=num_features, bias=False, eps=eps)
+            self.offset = specNorm_linear(in_features=condition_vector_dim, out_features=num_features, bias=False, eps=eps)
         else:
             self.weight = torch.nn.Parameter(torch.Tensor(num_features))
             self.bias = torch.nn.Parameter(torch.Tensor(num_features))
@@ -356,16 +305,16 @@ class GenBlock(nn.Module):
         middle_size = in_size // reduction_factor
 
         self.bn_0 = BigGANBatchNorm(in_size, condition_vector_dim, n_stats=n_stats, eps=eps, conditional=True)
-        self.conv_0 = snconv2d(in_channels=in_size, out_channels=middle_size, kernel_size=1, eps=eps)
+        self.conv_0 = specNorm_conv2d(in_channels=in_size, out_channels=middle_size, kernel_size=1, eps=eps)
 
         self.bn_1 = BigGANBatchNorm(middle_size, condition_vector_dim, n_stats=n_stats, eps=eps, conditional=True)
-        self.conv_1 = snconv2d(in_channels=middle_size, out_channels=middle_size, kernel_size=3, padding=1, eps=eps)
+        self.conv_1 = specNorm_conv2d(in_channels=middle_size, out_channels=middle_size, kernel_size=3, padding=1, eps=eps)
 
         self.bn_2 = BigGANBatchNorm(middle_size, condition_vector_dim, n_stats=n_stats, eps=eps, conditional=True)
-        self.conv_2 = snconv2d(in_channels=middle_size, out_channels=middle_size, kernel_size=3, padding=1, eps=eps)
+        self.conv_2 = specNorm_conv2d(in_channels=middle_size, out_channels=middle_size, kernel_size=3, padding=1, eps=eps)
 
         self.bn_3 = BigGANBatchNorm(middle_size, condition_vector_dim, n_stats=n_stats, eps=eps, conditional=True)
-        self.conv_3 = snconv2d(in_channels=middle_size, out_channels=out_size, kernel_size=1, eps=eps)
+        self.conv_3 = specNorm_conv2d(in_channels=middle_size, out_channels=out_size, kernel_size=1, eps=eps)
 
         self.relu = nn.ReLU()
 
@@ -407,7 +356,7 @@ class Generator(nn.Module):
         ch = config.channel_width
         condition_vector_dim = config.z_dim * 2
 
-        self.gen_z = snlinear(in_features=condition_vector_dim,
+        self.gen_z = specNorm_linear(in_features=condition_vector_dim,
                               out_features=4 * 4 * 16 * ch, eps=config.eps)
 
         layers = []
@@ -424,7 +373,7 @@ class Generator(nn.Module):
 
         self.bn = BigGANBatchNorm(ch, n_stats=config.n_stats, eps=config.eps, conditional=False)
         self.relu = nn.ReLU()
-        self.conv_to_rgb = snconv2d(in_channels=ch, out_channels=ch, kernel_size=3, padding=1, eps=config.eps)
+        self.conv_to_rgb = specNorm_conv2d(in_channels=ch, out_channels=ch, kernel_size=3, padding=1, eps=config.eps)
         self.tanh = nn.Tanh()
 
     def forward(self, cond_vector, truncation):
@@ -501,6 +450,6 @@ class BigGAN(nn.Module):
         z = self.generator(cond_vector, truncation)
         return z
 
-resolved_config_file = cached_path("https://s3.amazonaws.com/models.huggingface.co/biggan/biggan-deep-128-config.json")
-print(BigGANConfig.from_json_file(resolved_config_file))
+# resolved_config_file = cached_path("https://s3.amazonaws.com/models.huggingface.co/biggan/biggan-deep-128-config.json")
+# print(BigGANConfig.from_json_file(resolved_config_file))
 
