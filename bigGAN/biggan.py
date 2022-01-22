@@ -68,54 +68,153 @@ class BigGANConfig(object):
         return json.dumps(self.to_dict(), indent=2, sort_keys=True) + "\n"
 
 
-class BigGANBatchNorm(nn.Module):
-    """ This is a batch norm module that can handle conditional input and can be provided with pre-computed
-        activation means and variances for various truncation parameters.
-        We cannot just rely on torch.batch_norm since it cannot handle
-        batched weights (pytorch 1.0.1). We computate batch_norm our-self without updating running means and variances.
-        If you want to train this model you should add running means and variance computation logic.
-    """
-    def __init__(self, num_features, condition_vector_dim=None, n_stats=51, eps=1e-4, conditional=True):
-        super(BigGANBatchNorm, self).__init__()
-        self.num_features = num_features
-        self.eps = eps
-        self.conditional = conditional
 
-        # We use pre-computed statistics for n_stats values of truncation between 0 and 1
-        self.register_buffer('running_means', torch.zeros(n_stats, num_features))
-        self.register_buffer('running_vars', torch.ones(n_stats, num_features))
-        self.step_size = 1.0 / (n_stats - 1)
+class GenBlock(nn.Module):
+    def __init__(self, in_size, out_size, condition_vector_dim, reduction_factor=4, up_sample=False,
+                 n_stats=51, eps=1e-12):
+        super(GenBlock, self).__init__()
+        self.up_sample = up_sample
+        self.drop_channels = (in_size != out_size)
+        middle_size = in_size // reduction_factor
 
-        if conditional:
-            assert condition_vector_dim is not None
-            self.scale = specNorm_linear(in_features=condition_vector_dim, out_features=num_features, bias=False, eps=eps)
-            self.offset = specNorm_linear(in_features=condition_vector_dim, out_features=num_features, bias=False, eps=eps)
-        else:
-            self.weight = torch.nn.Parameter(torch.Tensor(num_features))
-            self.bias = torch.nn.Parameter(torch.Tensor(num_features))
+        self.bn_0 = BigGANBatchNorm(in_size, condition_vector_dim, n_stats=n_stats, eps=eps, conditional=True)
+        self.conv_0 = specNorm_conv2d(in_channels=in_size, out_channels=middle_size, kernel_size=1, eps=eps)
 
-    def forward(self, x, truncation, condition_vector=None):
-        # Retreive pre-computed statistics associated to this truncation
-        coef, start_idx = math.modf(truncation / self.step_size)
-        start_idx = int(start_idx)
-        if coef != 0.0:  # Interpolate
-            running_mean = self.running_means[start_idx] * coef + self.running_means[start_idx + 1] * (1 - coef)
-            running_var = self.running_vars[start_idx] * coef + self.running_vars[start_idx + 1] * (1 - coef)
-        else:
-            running_mean = self.running_means[start_idx]
-            running_var = self.running_vars[start_idx]
+        self.bn_1 = BigGANBatchNorm(middle_size, condition_vector_dim, n_stats=n_stats, eps=eps, conditional=True)
+        self.conv_1 = specNorm_conv2d(in_channels=middle_size, out_channels=middle_size, kernel_size=3, padding=1, eps=eps)
 
-        if self.conditional:
-            running_mean = running_mean.unsqueeze(0).unsqueeze(-1).unsqueeze(-1)
-            running_var = running_var.unsqueeze(0).unsqueeze(-1).unsqueeze(-1)
+        self.bn_2 = BigGANBatchNorm(middle_size, condition_vector_dim, n_stats=n_stats, eps=eps, conditional=True)
+        self.conv_2 = specNorm_conv2d(in_channels=middle_size, out_channels=middle_size, kernel_size=3, padding=1, eps=eps)
 
-            weight = 1 + self.scale(condition_vector).unsqueeze(-1).unsqueeze(-1)
-            bias = self.offset(condition_vector).unsqueeze(-1).unsqueeze(-1)
+        self.bn_3 = BigGANBatchNorm(middle_size, condition_vector_dim, n_stats=n_stats, eps=eps, conditional=True)
+        self.conv_3 = specNorm_conv2d(in_channels=middle_size, out_channels=out_size, kernel_size=1, eps=eps)
 
-            out = (x - running_mean) / torch.sqrt(running_var + self.eps) * weight + bias
-        else:
-            out = F.batch_norm(x, running_mean, running_var, self.weight, self.bias,
-                               training=False, momentum=0.0, eps=self.eps)
+        self.relu = nn.ReLU()
 
+    def forward(self, x, cond_vector, truncation):
+        x0 = x
+
+        x = self.bn_0(x, truncation, cond_vector)
+        x = self.relu(x)
+        x = self.conv_0(x)
+
+        x = self.bn_1(x, truncation, cond_vector)
+        x = self.relu(x)
+        if self.up_sample:
+            x = F.interpolate(x, scale_factor=2, mode='nearest')
+        x = self.conv_1(x)
+
+        x = self.bn_2(x, truncation, cond_vector)
+        x = self.relu(x)
+        x = self.conv_2(x)
+
+        x = self.bn_3(x, truncation, cond_vector)
+        x = self.relu(x)
+        x = self.conv_3(x)
+
+        if self.drop_channels:
+            new_channels = x0.shape[1] // 2
+            x0 = x0[:, :new_channels, ...]
+        if self.up_sample:
+            x0 = F.interpolate(x0, scale_factor=2, mode='nearest')
+
+        out = x + x0
         return out
 
+
+class Generator(nn.Module):
+    def __init__(self, config):
+        super(Generator, self).__init__()
+        self.config = config
+        ch = config.channel_width
+        condition_vector_dim = config.z_dim * 2
+
+        self.gen_z = snlinear(in_features=condition_vector_dim,
+                              out_features=4 * 4 * 16 * ch, eps=config.eps)
+
+        layers = []
+        for i, layer in enumerate(config.layers):
+            if i == config.attention_layer_position:
+                layers.append(SelfAttn(ch*layer[1], eps=config.eps))
+            layers.append(GenBlock(ch*layer[1],
+                                   ch*layer[2],
+                                   condition_vector_dim,
+                                   up_sample=layer[0],
+                                   n_stats=config.n_stats,
+                                   eps=config.eps))
+        self.layers = nn.ModuleList(layers)
+
+        self.bn = BigGANBatchNorm(ch, n_stats=config.n_stats, eps=config.eps, conditional=False)
+        self.relu = nn.ReLU()
+        self.conv_to_rgb = specNorm_conv2d(in_channels=ch, out_channels=ch, kernel_size=3, padding=1, eps=config.eps)
+        self.tanh = nn.Tanh()
+
+    def forward(self, cond_vector, truncation):
+        z = self.gen_z(cond_vector)
+
+        # We use this conversion step to be able to use TF weights:
+        # TF convention on shape is [batch, height, width, channels]
+        # PT convention on shape is [batch, channels, height, width]
+        z = z.view(-1, 4, 4, 16 * self.config.channel_width)
+        z = z.permute(0, 3, 1, 2).contiguous()
+
+        for i, layer in enumerate(self.layers):
+            if isinstance(layer, GenBlock):
+                z = layer(z, cond_vector, truncation)
+            else:
+                z = layer(z)
+
+        z = self.bn(z, truncation)
+        z = self.relu(z)
+        z = self.conv_to_rgb(z)
+        z = z[:, :3, ...]
+        z = self.tanh(z)
+        return z
+
+class BigGAN(nn.Module):
+    """BigGAN Generator."""
+
+    @classmethod
+    def from_pretrained(cls, pretrained_model_name_or_path, cache_dir=None, *inputs, **kwargs):
+        if pretrained_model_name_or_path in PRETRAINED_MODEL_ARCHIVE_MAP:
+            model_file = PRETRAINED_MODEL_ARCHIVE_MAP[pretrained_model_name_or_path]
+            config_file = PRETRAINED_CONFIG_ARCHIVE_MAP[pretrained_model_name_or_path]
+        else:
+            model_file = os.path.join(pretrained_model_name_or_path, WEIGHTS_NAME)
+            config_file = os.path.join(pretrained_model_name_or_path, CONFIG_NAME)
+
+        try:
+            resolved_model_file = cached_path(model_file, cache_dir=cache_dir)
+            resolved_config_file = cached_path(config_file, cache_dir=cache_dir)
+        except EnvironmentError:
+            logger.error("Wrong model name, should be a valid path to a folder containing "
+                         "a {} file and a {} file or a model name in {}".format(
+                         WEIGHTS_NAME, CONFIG_NAME, PRETRAINED_MODEL_ARCHIVE_MAP.keys()))
+            raise
+
+        logger.info("loading model {} from cache at {}".format(pretrained_model_name_or_path, resolved_model_file))
+
+        # Load config
+        config = BigGANConfig.from_json_file(resolved_config_file)
+        logger.info("Model config {}".format(config))
+
+        # Instantiate model.
+        model = cls(config, *inputs, **kwargs)
+        state_dict = torch.load(resolved_model_file, map_location='cpu' if not torch.cuda.is_available() else None)
+        model.load_state_dict(state_dict, strict=False)
+        return model
+
+    def __init__(self, config):
+        super(BigGAN, self).__init__()
+        self.config = config
+        self.embeddings = nn.Linear(config.num_classes, config.z_dim, bias=False)
+        self.generator = Generator(config)
+
+    def forward(self, z, class_label, truncation):
+        assert 0 < truncation <= 1
+
+        embed = self.embeddings(class_label)
+        cond_vector = torch.cat((z, embed), dim=1)
+
+        z = self.generator(cond_vector, truncation)
+        return z
