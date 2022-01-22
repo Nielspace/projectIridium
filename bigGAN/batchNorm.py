@@ -36,21 +36,23 @@ class batchNorm(nn.Module):
         start_idx = int(start_idx)
 
         if coef != 0.0:  # Interpolate
-            running_var = self.variance[start_idx] * coef + self.variance[start_idx + 1] * (1 - coef)
+            variance = self.variance[start_idx] * coef + self.variance[start_idx + 1] * (1 - coef)
         else:
-            running_mean = self.mean[start_idx]
-            running_var = self.variance[start_idx]
+            mean = self.mean[start_idx]
+            variance = self.variance[start_idx]
 
         if self.conditional:
-            running_mean = running_mean.unsqueeze(0).unsqueeze(-1).unsqueeze(-1)
-            running_var = running_var.unsqueeze(0).unsqueeze(-1).unsqueeze(-1)
+            mean = mean.unsqueeze(0).unsqueeze(-1).unsqueeze(-1)
+            variance = variance.unsqueeze(0).unsqueeze(-1).unsqueeze(-1)
 
             weight = 1 + self.scale(condition_vector).unsqueeze(-1).unsqueeze(-1)
             bias = self.offset(condition_vector).unsqueeze(-1).unsqueeze(-1)
-
-            out = (x - running_mean) / torch.sqrt(running_var + self.eps) * weight + bias
+            
+            #BN(F_i_c_w_h|w_c, B_c) = (w_c * F_i_c_w_h - E_B[F_i_c_w_h])/sqrt(Var_b[F_i_c_w_h] + e) + B_c
+            
+            out = weight * (x - mean) / torch.sqrt(variance + self.eps) + bias
         else:
-            out = F.batch_norm(x, running_mean, running_var, self.weight, self.bias,
+            out = F.batch_norm(x, mean, variance, self.weight, self.bias,
                                training=False, momentum=0.0, eps=self.eps)
 
         return out
