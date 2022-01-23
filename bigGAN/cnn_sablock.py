@@ -21,7 +21,7 @@ def specNorm_embedding(eps=1e-12, **kwargs):
     return o
 
 
-class self_attention_block(nn.Module):
+class Attention_block(nn.Module):
     """ Self attention Layer"""
     def __init__(self, in_channels, eps=1e-12):
         super(SelfAttn, self).__init__()
