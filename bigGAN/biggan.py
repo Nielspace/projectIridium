@@ -136,4 +136,4 @@ class BigGAN(nn.Module):
 
 
 if __name__ == '__main__':
-    print(BigGAN.from_pretrained(PRETRAINED_MODEL_ARCHIVE_MAP['biggan-deep-128']))
+    print(BigGAN.from_pretrained('biggan-deep-128'))

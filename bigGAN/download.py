@@ -142,7 +142,7 @@ def cached_path(url_or_filename, cache_dir=None, PATH=Path(os.curdir)):
 
     parsed = urlparse(url_or_filename)
 
-    if parsed.scheme in ('http', 'https'):
+    if parsed.scheme in ('http', 'https', 's3'):
         # URL, so get it from the cache (downloading if necessary)
         return get_from_cache(url_or_filename, cache_dir)
     elif os.path.exists(url_or_filename):
