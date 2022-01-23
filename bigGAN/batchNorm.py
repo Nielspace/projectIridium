@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn 
-import torch.nn.Function as F 
+import torch.nn.functional as F
 
 from cnn_sablock import specNorm_linear, specNorm_conv2d
 
@@ -8,7 +8,7 @@ class batchNorm(nn.Module):
     #https://arxiv.org/pdf/1707.00683.pdf=> Modulating early visual processing by language
     #https://arxiv.org/pdf/1502.03167.pdf => Batch Normalization: Accelerating Deep Network Training by Reducing Internal Covariate Shift
 
-    def __init__(self, num_features, condition_vector_dim=None, n_stats=51, eps=1e-4, True):
+    def __init__(self, num_features, condition_vector_dim=None, n_stats=51, eps=1e-4, conditional=True):
         super(batchNorm, self).__init__()
         self.num_features = num_features
         self.eps = eps

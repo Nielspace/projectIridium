@@ -27,23 +27,6 @@ import requests
 from botocore.exceptions import ClientError
 
 
-#---------------------------------------------------------------- url and config -----------------------------------------------------------
-PRETRAINED_MODEL_ARCHIVE_MAP = {
-    'biggan-deep-128': "https://s3.amazonaws.com/models.huggingface.co/biggan/biggan-deep-128-pytorch_model.bin",
-    'biggan-deep-256': "https://s3.amazonaws.com/models.huggingface.co/biggan/biggan-deep-256-pytorch_model.bin",
-    'biggan-deep-512': "https://s3.amazonaws.com/models.huggingface.co/biggan/biggan-deep-512-pytorch_model.bin",
-}
-
-PRETRAINED_CONFIG_ARCHIVE_MAP = {
-    'biggan-deep-128': "https://s3.amazonaws.com/models.huggingface.co/biggan/biggan-deep-128-config.json",
-    'biggan-deep-256': "https://s3.amazonaws.com/models.huggingface.co/biggan/biggan-deep-256-config.json",
-    'biggan-deep-512': "https://s3.amazonaws.com/models.huggingface.co/biggan/biggan-deep-512-config.json",
-}
-
-
-WEIGHTS_NAME = 'pytorch_model.bin'
-CONFIG_NAME = 'config.json'
-
 #---------------------------------------------------------------------------
 #cache dir 
 def designated_path_for_cache(PATH=Path.home()):
@@ -56,12 +39,7 @@ def designated_path_for_cache(PATH=Path.home()):
         
     return PYTORCH_PRETRAINED_BIGGAN_CACHE
 
-
-
-
 logger = logging.getLogger(__name__)
-
-
 
 def url_to_filename(url, etag=None):
     """
