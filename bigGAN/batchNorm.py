@@ -35,6 +35,7 @@ class batchNorm(nn.Module):
         coef, start_idx = math.modf(truncation / self.step_size)
         start_idx = int(start_idx)
 
+        #For interpolation read : https://arxiv.org/pdf/1802.05957.pdf
         if coef != 0.0:  # Interpolate
             variance = self.variance[start_idx] * coef + self.variance[start_idx + 1] * (1 - coef)
         else:
@@ -49,10 +50,11 @@ class batchNorm(nn.Module):
             bias = self.offset(condition_vector).unsqueeze(-1).unsqueeze(-1)
             
             #BN(F_i_c_w_h|w_c, B_c) = (w_c * F_i_c_w_h - E_B[F_i_c_w_h])/sqrt(Var_b[F_i_c_w_h] + e) + B_c
-            
+
             out = weight * (x - mean) / torch.sqrt(variance + self.eps) + bias
         else:
             out = F.batch_norm(x, mean, variance, self.weight, self.bias,
                                training=False, momentum=0.0, eps=self.eps)
 
         return out
+        
