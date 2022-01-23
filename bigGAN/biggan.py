@@ -2,9 +2,8 @@ import torch
 import torch.nn as nn 
 import torch.nn.functional as F
 
-from batchNorm import batchNorm
-from cnn_sablock import specNorm_linear, specNorm_conv2d, Attention_block
-
+from download import *
+from generator import Generator
 
 
 class BigGANConfig(object):
@@ -68,8 +67,6 @@ class BigGANConfig(object):
     def to_json_string(self):
         """Serializes this instance to a JSON string."""
         return json.dumps(self.to_dict(), indent=2, sort_keys=True) + "\n"
-
-
 
 
 
