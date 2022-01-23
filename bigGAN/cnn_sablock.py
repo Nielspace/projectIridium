@@ -4,22 +4,7 @@ import torch
 import torch.nn as nn  
 import torch.nn.functional as F
 
-
-def specNorm_conv2d(eps=1e-12, **kwargs):
-    cnn = nn.Conv2d(**kwargs)
-    o = nn.utils.spectral_norm(cnn, eps=eps)
-    return o
-
-def specNorm_linear(eps=1e-12, **kwargs):
-    linear = nn.Linear(**kwargs)
-    o = nn.utils.spectral_norm(linear, eps=eps)
-    return o
-
-def specNorm_embedding(eps=1e-12, **kwargs):
-    emb = nn.Embedding(**kwargs)
-    o = nn.utils.spectral_norm(emb, eps=eps)
-    return o
-
+from batchNorm import specNorm_conv2d
 
 class Attention_block(nn.Module):
     """ Self attention Layer"""

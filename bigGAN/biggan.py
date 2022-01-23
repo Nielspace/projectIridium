@@ -135,5 +135,3 @@ class BigGAN(nn.Module):
         return z
 
 
-if __name__ == '__main__':
-    print(BigGAN.from_pretrained('biggan-deep-128'))
