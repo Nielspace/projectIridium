@@ -18,7 +18,6 @@ PRETRAINED_CONFIG_ARCHIVE_MAP = {
     'biggan-deep-512': "https://s3.amazonaws.com/models.huggingface.co/biggan/biggan-deep-512-config.json",
 }
 
-
 WEIGHTS_NAME = 'pytorch_model.bin'
 CONFIG_NAME = 'config.json'
 
