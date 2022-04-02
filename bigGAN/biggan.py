@@ -45,6 +45,7 @@ class BigGANConfig(object):
                  attention_layer_position=8,
                  eps=1e-4,
                  n_stats=51):
+                 
         """Constructs BigGANConfig. """
         self.output_dim = output_dim
         self.z_dim = z_dim
