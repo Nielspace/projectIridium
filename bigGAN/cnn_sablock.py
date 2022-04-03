@@ -9,7 +9,7 @@ from batchNorm import specNorm_conv2d
 class Attention_block(nn.Module):
     """ Self attention Layer"""
     def __init__(self, in_channels, eps=1e-12):
-        super(SelfAttn, self).__init__()
+        super().__init__()
         self.in_channels = in_channels
         self.snconv1x1_f = specNorm_conv2d(in_channels=in_channels, out_channels=in_channels//8,
                                         kernel_size=1, bias=False, eps=eps)

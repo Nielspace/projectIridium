@@ -3,7 +3,8 @@ import torch.nn as nn
 import torch.nn.functional as F 
 
 from batchNorm import batchNorm
-from batchNorm import specNorm_linear, specNorm_conv2d, Attention_block
+from batchNorm import specNorm_linear, specNorm_conv2d
+from cnn_sablock import Attention_block
 
 class GenBlock(nn.Module):
     def __init__(self, in_size, out_size, condition_vector_dim, reduction_factor=4, up_sample=False,

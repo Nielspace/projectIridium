@@ -45,7 +45,7 @@ class BigGANConfig(object):
                  attention_layer_position=8,
                  eps=1e-4,
                  n_stats=51):
-                 
+
         """Constructs BigGANConfig. """
         self.output_dim = output_dim
         self.z_dim = z_dim
@@ -135,3 +135,8 @@ class BigGAN(nn.Module):
         return z
 
 
+
+
+
+test = BigGAN.from_pretrained('biggan-deep-128')
+print(test)
