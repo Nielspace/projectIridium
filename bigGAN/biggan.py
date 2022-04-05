@@ -138,5 +138,5 @@ class BigGAN(nn.Module):
 
 
 
-test = BigGAN.from_pretrained('biggan-deep-128')
-print(test)
+# test = BigGAN.from_pretrained('biggan-deep-128')
+# print(test)

@@ -1,4 +1,4 @@
-class Imagine(nn.Module):
+class artengine(nn.Module):
     def __init__(
         self,
         *,
