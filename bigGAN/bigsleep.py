@@ -28,17 +28,16 @@ from resample import resample
 from biggan import BigGAN
 from clip import load, tokenize
 
-# # assert torch.cuda.is_available(), 'CUDA must be available in order to use Big Sleep'
+device = torch.device("cuda:0" if (torch.cuda.is_available() and ngpu > 0) else "cpu")
 
-# # graceful keyboard interrupt
 
-# terminate = False
+terminate = False
 
-# def signal_handling(signum,frame):
-#     global terminate
-#     terminate = True
+def signal_handling(signum,frame):
+    global terminate
+    terminate = True
 
-# signal.signal(signal.SIGINT,signal_handling)
+signal.signal(signal.SIGINT,signal_handling)
 
 # # helpers
 
