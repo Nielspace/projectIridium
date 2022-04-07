@@ -39,17 +39,17 @@ def signal_handling(signum,frame):
 
 signal.signal(signal.SIGINT,signal_handling)
 
-# # helpers
+# helpers
 
-# def exists(val):
-#     return val is not None
+def exists(val):
+    return val is not None
 
-# def open_folder(path):
-#     if os.path.isfile(path):
-#         path = os.path.dirname(path)
+def open_folder(path):
+    if os.path.isfile(path):
+        path = os.path.dirname(path)
 
-#     if not os.path.isdir(path):
-#         return
+    if not os.path.isdir(path):
+        return
 
 #     cmd_list = None
 #     if sys.platform == 'darwin':
