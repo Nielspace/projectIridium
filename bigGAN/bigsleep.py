@@ -51,22 +51,22 @@ def open_folder(path):
     if not os.path.isdir(path):
         return
 
-#     cmd_list = None
-#     if sys.platform == 'darwin':
-#         cmd_list = ['open', '--', path]
-#     elif sys.platform == 'linux2' or sys.platform == 'linux':
-#         cmd_list = ['xdg-open', path]
-#     elif sys.platform in ['win32', 'win64']:
-#         cmd_list = ['explorer', path.replace('/','\\')]
-#     if cmd_list == None:
-#         return
+    cmd_list = None
+    if sys.platform == 'darwin':
+        cmd_list = ['open', '--', path]
+    elif sys.platform == 'linux2' or sys.platform == 'linux':
+        cmd_list = ['xdg-open', path]
+    elif sys.platform in ['win32', 'win64']:
+        cmd_list = ['explorer', path.replace('/','\\')]
+    if cmd_list == None:
+        return
 
-#     try:
-#         subprocess.check_call(cmd_list)
-#     except subprocess.CalledProcessError:
-#         pass
-#     except OSError:
-#         pass
+    try:
+        subprocess.check_call(cmd_list)
+    except subprocess.CalledProcessError:
+        pass
+    except OSError:
+        pass
 
 
 # def create_text_path(text=None, img=None, encoding=None):
