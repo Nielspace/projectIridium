@@ -69,20 +69,20 @@ def open_folder(path):
         pass
 
 
-# def create_text_path(text=None, img=None, encoding=None):
-#     input_name = ""
-#     if text is not None:
-#         input_name += text
-#     if img is not None:
-#         if isinstance(img, str):
-#             img_name = "".join(img.split(".")[:-1]) # replace spaces by underscores, remove img extension
-#             img_name = img_name.split("/")[-1]  # only take img name, not path
-#         else:
-#             img_name = "PIL_img"
-#         input_name += "_" + img_name
-#     if encoding is not None:
-#         input_name = "your_encoding"
-#     return input_name.replace("-", "_").replace(",", "").replace(" ", "_").replace("|", "--").strip('-_')[:255]
+def create_text_path(text=None, img=None, encoding=None):
+    input_name = ""
+    if text is not None:
+        input_name += text
+    if img is not None:
+        if isinstance(img, str):
+            img_name = "".join(img.split(".")[:-1]) # replace spaces by underscores, remove img extension
+            img_name = img_name.split("/")[-1]  # only take img name, not path
+        else:
+            img_name = "PIL_img"
+        input_name += "_" + img_name
+    if encoding is not None:
+        input_name = "your_encoding"
+    return input_name.replace("-", "_").replace(",", "").replace(" ", "_").replace("|", "--").strip('-_')[:255]
 
 # # tensor helpers
 
