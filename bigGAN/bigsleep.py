@@ -84,22 +84,22 @@ def create_text_path(text=None, img=None, encoding=None):
         input_name = "your_encoding"
     return input_name.replace("-", "_").replace(",", "").replace(" ", "_").replace("|", "--").strip('-_')[:255]
 
-# # tensor helpers
+# tensor helpers
 
-# def differentiable_topk(x, k, temperature=1.):
-#     n, dim = x.shape
-#     topk_tensors = []
+def differentiable_topk(x, k, temperature=1.):
+    n, dim = x.shape
+    topk_tensors = []
 
-#     for i in range(k):
-#         is_last = i == (k - 1)
-#         values, indices = (x / temperature).softmax(dim=-1).topk(1, dim=-1)
-#         topks = torch.zeros_like(x).scatter_(-1, indices, values)
-#         topk_tensors.append(topks)
-#         if not is_last:
-#             x = x.scatter(-1, indices, float('-inf'))
+    for i in range(k):
+        is_last = i == (k - 1)
+        values, indices = (x / temperature).softmax(dim=-1).topk(1, dim=-1)
+        topks = torch.zeros_like(x).scatter_(-1, indices, values)
+        topk_tensors.append(topks)
+        if not is_last:
+            x = x.scatter(-1, indices, float('-inf'))
 
-#     topks = torch.cat(topk_tensors, dim=-1)
-#     return topks.reshape(n, k, dim).sum(dim = 1)
+    topks = torch.cat(topk_tensors, dim=-1)
+    return topks.reshape(n, k, dim).sum(dim = 1)
 
 
 # def create_clip_img_transform(image_width):
