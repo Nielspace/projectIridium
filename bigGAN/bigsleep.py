@@ -102,17 +102,17 @@ def differentiable_topk(x, k, temperature=1.):
     return topks.reshape(n, k, dim).sum(dim = 1)
 
 
-# def create_clip_img_transform(image_width):
-#     clip_mean = [0.48145466, 0.4578275, 0.40821073]
-#     clip_std = [0.26862954, 0.26130258, 0.27577711]
-#     transform = T.Compose([
-#                     #T.ToPILImage(),
-#                     T.Resize(image_width),
-#                     T.CenterCrop((image_width, image_width)),
-#                     T.ToTensor(),
-#                     T.Normalize(mean=clip_mean, std=clip_std)
-#             ])
-#     return transform
+def create_clip_img_transform(image_width):
+    clip_mean = [0.48145466, 0.4578275, 0.40821073]
+    clip_std = [0.26862954, 0.26130258, 0.27577711]
+    transform = T.Compose([
+                    #T.ToPILImage(),
+                    T.Resize(image_width),
+                    T.CenterCrop((image_width, image_width)),
+                    T.ToTensor(),
+                    T.Normalize(mean=clip_mean, std=clip_std)
+            ])
+    return transform
 
 
 # def rand_cutout(image, size, center_bias=False, center_focus=2):
