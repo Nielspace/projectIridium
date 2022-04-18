@@ -115,24 +115,24 @@ def create_clip_img_transform(image_width):
     return transform
 
 
-# def rand_cutout(image, size, center_bias=False, center_focus=2):
-#     width = image.shape[-1]
-#     min_offset = 0
-#     max_offset = width - size
-#     if center_bias:
-#         # sample around image center
-#         center = max_offset / 2
-#         std = center / center_focus
-#         offset_x = int(random.gauss(mu=center, sigma=std))
-#         offset_y = int(random.gauss(mu=center, sigma=std))
-#         # resample uniformly if over boundaries
-#         offset_x = random.randint(min_offset, max_offset) if (offset_x > max_offset or offset_x < min_offset) else offset_x
-#         offset_y = random.randint(min_offset, max_offset) if (offset_y > max_offset or offset_y < min_offset) else offset_y
-#     else:
-#         offset_x = random.randint(min_offset, max_offset)
-#         offset_y = random.randint(min_offset, max_offset)
-#     cutout = image[:, :, offset_x:offset_x + size, offset_y:offset_y + size]
-#     return cutout
+def rand_cutout(image, size, center_bias=False, center_focus=2):
+    width = image.shape[-1]
+    min_offset = 0
+    max_offset = width - size
+    if center_bias:
+        # sample around image center
+        center = max_offset / 2
+        std = center / center_focus
+        offset_x = int(random.gauss(mu=center, sigma=std))
+        offset_y = int(random.gauss(mu=center, sigma=std))
+        # resample uniformly if over boundaries
+        offset_x = random.randint(min_offset, max_offset) if (offset_x > max_offset or offset_x < min_offset) else offset_x
+        offset_y = random.randint(min_offset, max_offset) if (offset_y > max_offset or offset_y < min_offset) else offset_y
+    else:
+        offset_x = random.randint(min_offset, max_offset)
+        offset_y = random.randint(min_offset, max_offset)
+    cutout = image[:, :, offset_x:offset_x + size, offset_y:offset_y + size]
+    return cutout
 
 # # load clip
 
