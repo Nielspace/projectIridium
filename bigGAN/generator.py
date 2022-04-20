@@ -105,6 +105,6 @@ class Generator(nn.Module):
         z = self.bn(z, truncation)
         z = self.relu(z)
         z = self.conv_to_rgb(z)
-        z = z[:, :3, ...]
+        z = z[:, :3, ...]   
         z = self.tanh(z)
         return z
