@@ -140,31 +140,31 @@ perceptor, normalize_image = load('ViT-B/32', jit = False)
 
 # load biggan
 
-# class Latents(torch.nn.Module):
-#     def __init__(
-#         self,
-#         num_latents = 15,
-#         num_classes = 1000,
-#         z_dim = 128,
-#         max_classes = None,
-#         class_temperature = 2.
-#     ):
-#         super().__init__()
-#         self.normu = torch.nn.Parameter(torch.zeros(num_latents, z_dim).normal_(std = 1))
-#         self.cls = torch.nn.Parameter(torch.zeros(num_latents, num_classes).normal_(mean = -3.9, std = .3))
-#         self.register_buffer('thresh_lat', torch.tensor(1))
+class Latents(torch.nn.Module):
+    def __init__(
+        self,
+        num_latents = 15,
+        num_classes = 1000,
+        z_dim = 128,
+        max_classes = None,
+        class_temperature = 2.
+    ):
+        super().__init__()
+        self.normu = torch.nn.Parameter(torch.zeros(num_latents, z_dim).normal_(std = 1))
+        self.cls = torch.nn.Parameter(torch.zeros(num_latents, num_classes).normal_(mean = -3.9, std = .3))
+        self.register_buffer('thresh_lat', torch.tensor(1))
 
-#         assert not exists(max_classes) or max_classes > 0 and max_classes <= num_classes, f'max_classes must be between 0 and {num_classes}'
-#         self.max_classes = max_classes
-#         self.class_temperature = class_temperature
+        assert not exists(max_classes) or max_classes > 0 and max_classes <= num_classes, f'max_classes must be between 0 and {num_classes}'
+        self.max_classes = max_classes
+        self.class_temperature = class_temperature
 
-#     def forward(self):
-#         if exists(self.max_classes):
-#             classes = differentiable_topk(self.cls, self.max_classes, temperature = self.class_temperature)
-#         else:
-#             classes = torch.sigmoid(self.cls)
+    def forward(self):
+        if exists(self.max_classes):
+            classes = differentiable_topk(self.cls, self.max_classes, temperature = self.class_temperature)
+        else:
+            classes = torch.sigmoid(self.cls)
 
-#         return self.normu, classes
+        return self.normu, classes
 
 # class Model(nn.Module):
 #     def __init__(
