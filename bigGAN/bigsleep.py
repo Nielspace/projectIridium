@@ -166,38 +166,38 @@ class Latents(torch.nn.Module):
 
         return self.normu, classes
 
-# class Model(nn.Module):
-#     def __init__(
-#         self,
-#         image_size,
-#         max_classes = None,
-#         class_temperature = 2.,
-#         ema_decay = 0.99
-#     ):
-#         super().__init__()
-#         assert image_size in (128, 256, 512), 'image size must be one of 128, 256, or 512'
-#         self.biggan = BigGAN.from_pretrained(f'biggan-deep-{image_size}')
-#         self.max_classes = max_classes
-#         self.class_temperature = class_temperature
-#         self.ema_decay\
-#             = ema_decay
+class Model(nn.Module):
+    def __init__(
+        self,
+        image_size,
+        max_classes = None,
+        class_temperature = 2.,
+        ema_decay = 0.99
+    ):
+        super().__init__()
+        assert image_size in (128, 256, 512), 'image size must be one of 128, 256, or 512'
+        self.biggan = BigGAN.from_pretrained(f'biggan-deep-{image_size}')
+        self.max_classes = max_classes
+        self.class_temperature = class_temperature
+        self.ema_decay\
+            = ema_decay
 
-#         self.init_latents()
+        self.init_latents()
 
-#     def init_latents(self):
-#         latents = Latents(
-#             num_latents = len(self.biggan.config.layers) + 1,
-#             num_classes = self.biggan.config.num_classes,
-#             z_dim = self.biggan.config.z_dim,
-#             max_classes = self.max_classes,
-#             class_temperature = self.class_temperature
-#         )
-#         self.latents = EMA(latents, self.ema_decay)
+    def init_latents(self):
+        latents = Latents(
+            num_latents = len(self.biggan.config.layers) + 1,
+            num_classes = self.biggan.config.num_classes,
+            z_dim = self.biggan.config.z_dim,
+            max_classes = self.max_classes,
+            class_temperature = self.class_temperature
+        )
+        self.latents = EMA(latents, self.ema_decay)
 
-#     def forward(self):
-#         self.biggan.eval()
-#         out = self.biggan(*self.latents(), 1)
-#         return (out + 1) / 2
+    def forward(self):
+        self.biggan.eval()
+        out = self.biggan(*self.latents(), 1)
+        return (out + 1) / 2
 
 
 # class BigSleep(nn.Module):
