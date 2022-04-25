@@ -200,98 +200,98 @@ class Model(nn.Module):
         return (out + 1) / 2
 
 
-# class BigSleep(nn.Module):
-#     def __init__(
-#         self,
-#         num_cutouts = 128,
-#         loss_coef = 100,
-#         image_size = 512,
-#         bilinear = False,
-#         max_classes = None,
-#         class_temperature = 2.,
-#         experimental_resample = False,
-#         ema_decay = 0.99,
-#         center_bias = False,
-#     ):
-#         super().__init__()
-#         self.loss_coef = loss_coef
-#         self.image_size = image_size
-#         self.num_cutouts = num_cutouts
-#         self.experimental_resample = experimental_resample
-#         self.center_bias = center_bias
+class BigSleep(nn.Module):
+    def __init__(
+        self,
+        num_cutouts = 128,
+        loss_coef = 100,
+        image_size = 512,
+        bilinear = False,
+        max_classes = None,
+        class_temperature = 2.,
+        experimental_resample = False,
+        ema_decay = 0.99,
+        center_bias = False,
+    ):
+        super().__init__()
+        self.loss_coef = loss_coef
+        self.image_size = image_size
+        self.num_cutouts = num_cutouts
+        self.experimental_resample = experimental_resample
+        self.center_bias = center_bias
 
-#         self.interpolation_settings = {'mode': 'bilinear', 'align_corners': False} if bilinear else {'mode': 'nearest'}
+        self.interpolation_settings = {'mode': 'bilinear', 'align_corners': False} if bilinear else {'mode': 'nearest'}
 
-#         self.model = Model(
-#             image_size = image_size,
-#             max_classes = max_classes,
-#             class_temperature = class_temperature,
-#             ema_decay = ema_decay
-#         )
+        self.model = Model(
+            image_size = image_size,
+            max_classes = max_classes,
+            class_temperature = class_temperature,
+            ema_decay = ema_decay
+        )
 
-#     def reset(self):
-#         self.model.init_latents()
+    def reset(self):
+        self.model.init_latents()
 
-#     def sim_txt_to_img(self, text_embed, img_embed, text_type="max"):
-#         sign = -1
-#         if text_type == "min":
-#             sign = 1
-#         return sign * self.loss_coef * torch.cosine_similarity(text_embed, img_embed, dim = -1).mean()
+    def sim_txt_to_img(self, text_embed, img_embed, text_type="max"):
+        sign = -1
+        if text_type == "min":
+            sign = 1
+        return sign * self.loss_coef * torch.cosine_similarity(text_embed, img_embed, dim = -1).mean()
 
-#     def forward(self, text_embeds, text_min_embeds=[], return_loss = True):
-#         width, num_cutouts = self.image_size, self.num_cutouts
+    def forward(self, text_embeds, text_min_embeds=[], return_loss = True):
+        width, num_cutouts = self.image_size, self.num_cutouts
 
-#         out = self.model()
+        out = self.model()
 
-#         if not return_loss:
-#             return out
+        if not return_loss:
+            return out
 
-#         pieces = []
-#         for ch in range(num_cutouts):
-#             # sample cutout size
-#             size = int(width * torch.zeros(1,).normal_(mean=.8, std=.3).clip(.5, .95))
-#             # get cutout
-#             apper = rand_cutout(out, size, center_bias=self.center_bias)
-#             if (self.experimental_resample):
-#                 apper = resample(apper, (224, 224))
-#             else:
-#                 apper = F.interpolate(apper, (224, 224), **self.interpolation_settings)
-#             pieces.append(apper)
+        pieces = []
+        for ch in range(num_cutouts):
+            # sample cutout size
+            size = int(width * torch.zeros(1,).normal_(mean=.8, std=.3).clip(.5, .95))
+            # get cutout
+            apper = rand_cutout(out, size, center_bias=self.center_bias)
+            if (self.experimental_resample):
+                apper = resample(apper, (224, 224))
+            else:
+                apper = F.interpolate(apper, (224, 224), **self.interpolation_settings)
+            pieces.append(apper)
 
-#         into = torch.cat(pieces)
-#         into = normalize_image(into)
+        into = torch.cat(pieces)
+        into = normalize_image(into)
 
-#         image_embed = perceptor.encode_image(into)
+        image_embed = perceptor.encode_image(into)
 
-#         latents, soft_one_hot_classes = self.model.latents()
-#         num_latents = latents.shape[0]
-#         latent_thres = self.model.latents.model.thresh_lat
+        latents, soft_one_hot_classes = self.model.latents()
+        num_latents = latents.shape[0]
+        latent_thres = self.model.latents.model.thresh_lat
 
-#         lat_loss =  torch.abs(1 - torch.std(latents, dim=1)).mean() + \
-#                     torch.abs(torch.mean(latents, dim = 1)).mean() + \
-#                     4 * torch.max(torch.square(latents).mean(), latent_thres)
+        lat_loss =  torch.abs(1 - torch.std(latents, dim=1)).mean() + \
+                    torch.abs(torch.mean(latents, dim = 1)).mean() + \
+                    4 * torch.max(torch.square(latents).mean(), latent_thres)
 
 
-#         for array in latents:
-#             mean = torch.mean(array)
-#             diffs = array - mean
-#             var = torch.mean(torch.pow(diffs, 2.0))
-#             std = torch.pow(var, 0.5)
-#             zscores = diffs / std
-#             skews = torch.mean(torch.pow(zscores, 3.0))
-#             kurtoses = torch.mean(torch.pow(zscores, 4.0)) - 3.0
+        for array in latents:
+            mean = torch.mean(array)
+            diffs = array - mean
+            var = torch.mean(torch.pow(diffs, 2.0))
+            std = torch.pow(var, 0.5)
+            zscores = diffs / std
+            skews = torch.mean(torch.pow(zscores, 3.0))
+            kurtoses = torch.mean(torch.pow(zscores, 4.0)) - 3.0
 
-#             lat_loss = lat_loss + torch.abs(kurtoses) / num_latents + torch.abs(skews) / num_latents
+            lat_loss = lat_loss + torch.abs(kurtoses) / num_latents + torch.abs(skews) / num_latents
 
-#         cls_loss = ((50 * torch.topk(soft_one_hot_classes, largest = False, dim = 1, k = 999)[0]) ** 2).mean()
+        cls_loss = ((50 * torch.topk(soft_one_hot_classes, largest = False, dim = 1, k = 999)[0]) ** 2).mean()
 
-#         results = []
-#         for txt_embed in text_embeds:
-#             results.append(self.sim_txt_to_img(txt_embed, image_embed))
-#         for txt_min_embed in text_min_embeds:
-#             results.append(self.sim_txt_to_img(txt_min_embed, image_embed, "min"))
-#         sim_loss = sum(results).mean()
-#         return out, (lat_loss, cls_loss, sim_loss)
+        results = []
+        for txt_embed in text_embeds:
+            results.append(self.sim_txt_to_img(txt_embed, image_embed))
+        for txt_min_embed in text_min_embeds:
+            results.append(self.sim_txt_to_img(txt_min_embed, image_embed, "min"))
+        sim_loss = sum(results).mean()
+        return out, (lat_loss, cls_loss, sim_loss)
 
 
 print('done')
