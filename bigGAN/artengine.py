@@ -80,33 +80,33 @@ class artengine(nn.Module):
         # create starting encoding
         self.set_clip_encoding(text=text, img=img, encoding=encoding, text_min=text_min)
     
-    # @property
-    # def seed_suffix(self):
-    #     return f'.{self.seed}' if self.append_seed and exists(self.seed) else ''
+    @property
+    def seed_suffix(self):
+        return f'.{self.seed}' if self.append_seed and exists(self.seed) else ''
 
-    # def set_text(self, text):
-    #     self.set_clip_encoding(text = text)
+    def set_text(self, text):
+        self.set_clip_encoding(text = text)
 
-    # def create_clip_encoding(self, text=None, img=None, encoding=None):
-    #     self.text = text
-    #     self.img = img
-    #     if encoding is not None:
-    #         encoding = encoding.cuda()
-    #     #elif self.create_story:
-    #     #    encoding = self.update_story_encoding(epoch=0, iteration=1)
-    #     elif text is not None and img is not None:
-    #         encoding = (self.create_text_encoding(text) + self.create_img_encoding(img)) / 2
-    #     elif text is not None:
-    #         encoding = self.create_text_encoding(text)
-    #     elif img is not None:
-    #         encoding = self.create_img_encoding(img)
-    #     return encoding
+    def create_clip_encoding(self, text=None, img=None, encoding=None):
+        self.text = text
+        self.img = img
+        if encoding is not None:
+            encoding = encoding.cuda()
+        #elif self.create_story:
+        #    encoding = self.update_story_encoding(epoch=0, iteration=1)
+        elif text is not None and img is not None:
+            encoding = (self.create_text_encoding(text) + self.create_img_encoding(img)) / 2
+        elif text is not None:
+            encoding = self.create_text_encoding(text)
+        elif img is not None:
+            encoding = self.create_img_encoding(img)
+        return encoding
 
-    # def create_text_encoding(self, text):
-    #     tokenized_text = tokenize(text).cuda()
-    #     with torch.no_grad():
-    #         text_encoding = perceptor.encode_text(tokenized_text).detach()
-    #     return text_encoding
+    def create_text_encoding(self, text):
+        tokenized_text = tokenize(text).cuda()
+        with torch.no_grad():
+            text_encoding = perceptor.encode_text(tokenized_text).detach()
+        return text_encoding
     
     # def create_img_encoding(self, img):
     #     if isinstance(img, str):
