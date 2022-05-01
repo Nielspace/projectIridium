@@ -108,20 +108,20 @@ class artengine(nn.Module):
             text_encoding = perceptor.encode_text(tokenized_text).detach()
         return text_encoding
     
-    # def create_img_encoding(self, img):
-    #     if isinstance(img, str):
-    #         img = Image.open(img)
-    #     normed_img = self.clip_transform(img).unsqueeze(0).cuda()
-    #     with torch.no_grad():
-    #         img_encoding = perceptor.encode_image(normed_img).detach()
-    #     return img_encoding
+    def create_img_encoding(self, img):
+        if isinstance(img, str):
+            img = Image.open(img)
+        normed_img = self.clip_transform(img).unsqueeze(0).cuda()
+        with torch.no_grad():
+            img_encoding = perceptor.encode_image(normed_img).detach()
+        return img_encoding
     
     
-    # def encode_multiple_phrases(self, text, img=None, encoding=None, text_type="max"):
-    #     if text is not None and "|" in text:
-    #         self.encoded_texts[text_type] = [self.create_clip_encoding(text=prompt_min, img=img, encoding=encoding) for prompt_min in text.split("|")]
-    #     else:
-    #         self.encoded_texts[text_type] = [self.create_clip_encoding(text=text, img=img, encoding=encoding)]
+    def encode_multiple_phrases(self, text, img=None, encoding=None, text_type="max"):
+        if text is not None and "|" in text:
+            self.encoded_texts[text_type] = [self.create_clip_encoding(text=prompt_min, img=img, encoding=encoding) for prompt_min in text.split("|")]
+        else:
+            self.encoded_texts[text_type] = [self.create_clip_encoding(text=text, img=img, encoding=encoding)]
 
     # def encode_max_and_min(self, text, img=None, encoding=None, text_min=""):
     #     self.encode_multiple_phrases(text, img=img, encoding=encoding)
