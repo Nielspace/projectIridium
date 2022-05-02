@@ -123,25 +123,25 @@ class artengine(nn.Module):
         else:
             self.encoded_texts[text_type] = [self.create_clip_encoding(text=text, img=img, encoding=encoding)]
 
-    # def encode_max_and_min(self, text, img=None, encoding=None, text_min=""):
-    #     self.encode_multiple_phrases(text, img=img, encoding=encoding)
-    #     if text_min is not None and text_min != "":
-    #         self.encode_multiple_phrases(text_min, img=img, encoding=encoding, text_type="min")
+    def encode_max_and_min(self, text, img=None, encoding=None, text_min=""):
+        self.encode_multiple_phrases(text, img=img, encoding=encoding)
+        if text_min is not None and text_min != "":
+            self.encode_multiple_phrases(text_min, img=img, encoding=encoding, text_type="min")
 
-    # def set_clip_encoding(self, text=None, img=None, encoding=None, text_min=""):
-    #     self.current_best_score = 0
-    #     self.text = text
-    #     self.text_min = text_min
+    def set_clip_encoding(self, text=None, img=None, encoding=None, text_min=""):
+        self.current_best_score = 0
+        self.text = text
+        self.text_min = text_min
         
-    #     if len(text_min) > 0:
-    #         text = text + "_wout_" + text_min[:255] if text is not None else "wout_" + text_min[:255]
-    #     text_path = create_text_path(text=text, img=img, encoding=encoding)
-    #     if self.save_date_time:
-    #         text_path = datetime.now().strftime("%y%m%d-%H%M%S-") + text_path
+        if len(text_min) > 0:
+            text = text + "_wout_" + text_min[:255] if text is not None else "wout_" + text_min[:255]
+        text_path = create_text_path(text=text, img=img, encoding=encoding)
+        if self.save_date_time:
+            text_path = datetime.now().strftime("%y%m%d-%H%M%S-") + text_path
 
-    #     self.text_path = text_path
-    #     self.filename = Path(f'./{text_path}{self.seed_suffix}.png')
-    #     self.encode_max_and_min(text, img=img, encoding=encoding, text_min=text_min) # Tokenize and encode each prompt
+        self.text_path = text_path
+        self.filename = Path(f'./{text_path}{self.seed_suffix}.png')
+        self.encode_max_and_min(text, img=img, encoding=encoding, text_min=text_min) # Tokenize and encode each prompt
 
     # def reset(self):
     #     self.model.reset()
